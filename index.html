@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Make it look like an App on Mobile -->
+    <meta name="theme-color" content="#050505">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1036/1036081.png">
+    
+    <!-- SEO & Google Search Meta Tags -->
+    <meta name="description" content="تطبيق أثر - مساحتك الاحترافية لتتبع الإنجاز الشخصي، المحافظة على الصلوات والأوراد.">
+    <meta name="keywords" content="تطبيق أثر, تتبع إنجاز, تطوير شخصي, تنظيم وقت, صلاة">
+    <meta name="author" content="صلاح القناص">
+    <meta property="og:title" content="تطبيق أَثَــر">
+    <meta property="og:description" content="التطبيق الرسمي لتتبع الإنجاز وتطويرك الشخصي">
+    <meta property="og:type" content="website">
+
+    <title>تطبيق أَثَــر - لوحة الإنجاز</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons (Phosphor) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <!-- Plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --surface-bg: rgba(20, 20, 25, 0.65);
+            --surface-light: rgba(35, 35, 45, 0.8);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+            --font-ar: 'Cairo', sans-serif;
+            --font-en: 'Inter', sans-serif;
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box;
+            font-family: var(--font-ar);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Ambient Mesh Background */
+        .ambient-mesh {
+            position: fixed; inset: 0; z-index: -1;
+            background: 
+                radial-gradient(at 10% 10%, rgba(13, 25, 60, 0.8) 0px, transparent 50%),
+                radial-gradient(at 90% 10%, rgba(20, 15, 45, 0.8) 0px, transparent 50%),
+                radial-gradient(at 90% 90%, rgba(10, 35, 40, 0.8) 0px, transparent 50%),
+                radial-gradient(at 10% 90%, rgba(25, 10, 40, 0.8) 0px, transparent 50%);
+            animation: meshAnim 20s ease-in-out infinite alternate;
+        }
+        @keyframes meshAnim {
+            0% { transform: scale(1); filter: hue-rotate(0deg); }
+            100% { transform: scale(1.1); filter: hue-rotate(30deg); }
+        }
+
+        /* Layout & Container */
+        .app-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem;
+        }
+
+        .header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 3rem;
+            background: var(--surface-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            padding: 1.5rem 2.5rem; border-radius: 24px; border: 1px solid var(--border);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        .brand {
+            display: flex; align-items: center; gap: 1rem;
+        }
+        .brand i {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .brand h1 {
+            font-size: 1.8rem; font-weight: 900; letter-spacing: -0.5px;
+        }
+        .brand p {
+            color: var(--text-muted); font-size: 0.95rem; font-weight: 600;
+        }
+
+        /* Stats Dashboard */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--surface-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border); border-radius: 24px; padding: 2rem;
+            display: flex; align-items: center; gap: 1.5rem; position: relative; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: transform 0.3s;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+
+        /* Progress Rings */
+        .ring-container {
+            position: relative; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center;
+        }
+        .ring-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
+        .ring-bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 8; }
+        .ring-fill {
+            fill: none; stroke-width: 8; stroke-linecap: round;
+            stroke-dasharray: 251.2;
+            transition: stroke-dashoffset 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .ring-text {
+            position: absolute; font-family: var(--font-en); font-size: 1.3rem; font-weight: 800; color: #fff;
+        }
+        
+        .stat-info { display: flex; flex-direction: column; }
+        .stat-info h3 { font-size: 1.35rem; margin-bottom: 0.3rem; display: flex; align-items: center; gap: 0.5rem;}
+        .stat-info p { color: var(--text-muted); font-size: 0.95rem; }
+        .stat-info .details { font-family: var(--font-en); font-size: 0.9rem; margin-top: 0.5rem; background: rgba(255,255,255,0.05); padding: 0.3rem 0.8rem; border-radius: 8px; display: inline-block;}
+
+        /* Week Tabs */
+        .week-tabs {
+            display: flex; gap: 1rem; margin-bottom: 2rem; overflow-x: auto; padding-bottom: 0.5rem;
+            scrollbar-width: none;
+        }
+        .week-tabs::-webkit-scrollbar { display: none; }
+        
+        .tab-btn {
+            background: var(--surface-bg); color: var(--text-muted); border: 1px solid var(--border);
+            padding: 1rem 2.5rem; border-radius: 100px; font-size: 1.15rem; font-weight: 800;
+            cursor: pointer; transition: all 0.3s; white-space: nowrap; backdrop-filter: blur(12px);
+            display: inline-flex; align-items: center; gap: 0.5rem;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        .tab-btn.active {
+            background: #fff; color: #000; box-shadow: 0 0 20px rgba(255,255,255,0.3); border-color: #fff;
+        }
+
+        /* Settings Dropdown Button */
+        .settings-btn-container {
+            position: relative;
+        }
+        .dropdown-menu {
+            position: absolute; top: 120%; left: 0; background: var(--surface-light); border: 1px solid var(--border);
+            border-radius: 16px; padding: 0.5rem; display: none; flex-direction: column; gap: 0.5rem; min-width: 200px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 10;
+        }
+        .dropdown-menu.show { display: flex; }
+        .dropdown-item {
+            background: transparent; color: #fff; border: none; padding: 0.8rem 1rem; border-radius: 10px;
+            font-size: 1rem; font-weight: 600; text-align: right; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;
+            transition: all 0.2s;
+        }
+        .dropdown-item:hover { background: rgba(255,255,255,0.1); }
+
+        /* Clear Button Styles */
+        .btn-clear {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex; align-items: center; gap: 0.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-clear:hover {
+            background: #ef4444; color: #fff;
+            box-shadow: 0 5px 15px rgba(239, 68, 68, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* Grid & Tables */
+        .week-pane { display: none; animation: fadeIn 0.4s ease; }
+        .week-pane.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .category-section {
+            background: var(--surface-bg); backdrop-filter: blur(24px); border: 1px solid var(--border);
+            border-radius: 24px; padding: 2.5rem; margin-bottom: 2rem;
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+
+        .cat-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
+        .cat-header-left { display: flex; align-items: center; gap: 1rem; }
+        .cat-icon {
+            width: 60px; height: 60px; border-radius: 18px; display: flex; align-items: center; justify-content: center;
+            font-size: 2.2rem; color: #fff; box-shadow: inset 0 2px 4px rgba(255,255,255,0.3);
+        }
+        .cat-header h2 { font-size: 1.6rem; font-weight: 800; }
+        .cat-header p { color: var(--text-muted); font-size: 1rem; }
+
+        .table-responsive {
+            width: 100%; overflow-x: auto; border-radius: 16px; background: rgba(0,0,0,0.2);
+            border: 1px solid var(--border); scrollbar-width: thin;
+        }
+        .table-responsive::-webkit-scrollbar { height: 8px; }
+        .table-responsive::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+        table { width: 100%; border-collapse: separate; border-spacing: 0; text-align: center; }
+        
+        th, td {
+            padding: 1.2rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.05); border-left: 1px solid rgba(255,255,255,0.05); min-width: 110px;
+        }
+        th { background: rgba(255,255,255,0.02); font-weight: 700; font-size: 1.05rem; }
+        
+        .sticky-col {
+            position: sticky; right: 0; background: var(--surface-light); 
+            z-index: 2; font-weight: 800; font-size: 1.1rem; text-align: right;
+            border-left: 2px solid rgba(255,255,255,0.1) !important;
+            box-shadow: -5px 0 10px rgba(0,0,0,0.2);
+        }
+        th.sticky-col { z-index: 3; background: inherit; }
+        
+        tbody tr:hover { background: rgba(255,255,255,0.015); }
+        tbody tr:last-child td { border-bottom: none; }
+
+        /* Fancy Checkboxes */
+        .fancy-checkbox {
+            appearance: none; -webkit-appearance: none;
+            width: 36px; height: 36px; background: rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.1); border-radius: 12px;
+            cursor: pointer; position: relative; display: inline-flex; align-items: center; justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .fancy-checkbox:hover { border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.05); }
+        
+        .fancy-checkbox:checked {
+            border-color: transparent !important;
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .fancy-checkbox:checked::after {
+            content: '✓'; color: #fff; font-size: 20px; font-weight: 900; font-family: var(--font-en);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        @keyframes popIn { 0% { transform: scale(0.8); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+
+        @media (max-width: 900px) {
+            .app-container { padding: 1.5rem 1rem; }
+            .header { flex-direction: column; text-align: center; gap: 1rem; padding: 1.5rem; }
+            .cat-header { flex-direction: column; text-align: center; gap: 1rem; justify-content: center; }
+            .cat-header-left { flex-direction: column; text-align: center;}
+            .stats-grid { grid-template-columns: 1fr; }
+            .category-section { padding: 1.5rem; }
+            th, td { padding: 1rem 0.5rem; font-size: 0.9rem; min-width: 85px; }
+            .fancy-checkbox { width: 30px; height: 30px; }
+            .fancy-checkbox:checked::after { font-size: 16px; }
+            .sticky-col { font-size: 0.95rem; }
+            .dropdown-menu { left: 50%; transform: translateX(-50%); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-mesh"></div>
+
+    <div class="app-container">
+        
+        <header class="header">
+            <div class="brand">
+                <i class="ph-fill ph-fingerprint"></i>
+                <div>
+                    <h1>تطبيق أَثــر</h1>
+                    <p>مرحباً بك <span id="userNameDisplay" style="color: #3b82f6; font-weight: 800;">يا بطل 🎯</span></p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <button id="enableNotifBtn" class="tab-btn" onclick="startNotificationSystem()" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-color: rgba(59,130,246,0.2); padding: 0.8rem 1.5rem; font-size: 1rem; display: none;">
+                    <i class="ph-fill ph-bell-ringing"></i> 
+                    تنبيهات
+                </button>
+                
+                <div class="settings-btn-container">
+                    <button class="tab-btn" onclick="toggleSettings()" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6; border-color: rgba(139, 92, 246, 0.2); padding: 0.8rem 1.5rem; font-size: 1rem;">
+                        <i class="ph-fill ph-gear"></i> الإعدادات
+                    </button>
+                    <div id="settingsDropdown" class="dropdown-menu">
+                        <button class="dropdown-item" onclick="exportData()"><i class="ph-bold ph-export"></i> تصدير البيانات</button>
+                        <button class="dropdown-item" onclick="importData()"><i class="ph-bold ph-import"></i> استيراد البيانات</button>
+                        <input type="file" id="importFile" style="display: none;" accept=".json" onchange="handleFileImport(event)">
+                    </div>
+                </div>
+
+                <button onclick="logout()" id="logoutBtn" class="tab-btn" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.2); padding: 0.8rem 1.5rem; font-size: 1rem; display: none;">
+                    <i class="ph-bold ph-sign-out"></i> خروج
+                </button>
+                <button onclick="login()" id="loginBtn" class="tab-btn" style="background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; border: none; padding: 0.8rem 1.5rem; font-size: 1rem; box-shadow: 0 4px 15px rgba(59,130,246,0.4);">
+                    <i class="ph-bold ph-user-circle"></i> حسابي
+                </button>
+            </div>
+        </header>
+
+        <div class="stats-grid" id="statsContainer">
+            <!-- Stats will be injected here -->
+        </div>
+
+        <div class="week-tabs" id="weekTabsContainer">
+            <!-- Tabs will be injected here -->
+        </div>
+
+        <div id="appPanesContainer">
+            <!-- Panes will be injected here -->
+        </div>
+
+    </div>
+
+    <script>
+        // Check Login State
+        const currentUser = localStorage.getItem('currentUser');
+        let dataKey = 'tracker_data_guest';
+        
+        if (currentUser) {
+            document.getElementById('userNameDisplay').innerText = `يا ${currentUser} 🎯`;
+            document.getElementById('logoutBtn').style.display = 'inline-flex';
+            document.getElementById('loginBtn').style.display = 'none';
+            dataKey = `tracker_data_${currentUser}`;
+        } else {
+            // Generate guest ID if not exists
+            let guestId = localStorage.getItem('guestId');
+            if(!guestId) {
+                guestId = 'guest_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('guestId', guestId);
+            }
+            dataKey = `tracker_data_${guestId}`;
+        }
+
+        // Initialize Data
+        let appData = JSON.parse(localStorage.getItem(dataKey));
+        if (!appData) {
+            appData = { prayers: {}, quran: {}, study: {} };
+            localStorage.setItem(dataKey, JSON.stringify(appData));
+        }
+
+        function saveData() {
+            localStorage.setItem(dataKey, JSON.stringify(appData));
+        }
+
+        // Configuration
+        const weeks = { 1: 'الأسبوع الأول', 2: 'الأسبوع الثاني', 3: 'الأسبوع الثالث', 4: 'الأسبوع الرابع' };
+        const days = {
+            'sat': 'السبت', 'sun': 'الأحد', 'mon': 'الاثنين', 
+            'tue': 'الثلاثاء', 'wed': 'الأربعاء', 'thu': 'الخميس', 'fri': 'الجمعة'
+        };
+
+        const categories = {
+            prayers: {
+                title: 'الصلوات', subtitle: 'عماد دينك ونورك', icon: 'ph-mosque', color: '#10b981', glow: 'rgba(16, 185, 129, 0.4)',
+                rows: { fajr: 'الفجر', dhuhr: 'الظهر', asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء' }
+            },
+            quran: {
+                title: 'التلاوة والأوراد', subtitle: 'القرآن شفاء، والأحزاب ترفع درجاتك', icon: 'ph-book-open-text', color: '#3b82f6', glow: 'rgba(59, 130, 246, 0.4)',
+                rows: { w_fajr: 'ورد الفجر', w_dhuhr: 'ورد الظهر', w_asr: 'ورد العصر', w_maghrib: 'ورد المغرب', w_isha: 'ورد العشاء' }
+            },
+            study: {
+                title: 'المذاكرة والتطوير', subtitle: 'الجهد الذي تبذله اليوم هو نجاح الغد', icon: 'ph-student', color: '#8b5cf6', glow: 'rgba(139, 92, 246, 0.4)',
+                rows: { sub1: 'المادة الأولى', sub2: 'المادة الثانية', sub3: 'المادة الثالثة', exercises: 'حل التمارين', review: 'المراجعة' }
+            }
+        };
+
+        const targets = {};
+        for (let k in categories) {
+            targets[k] = Object.keys(weeks).length * Object.keys(days).length * Object.keys(categories[k].rows).length;
+        }
+
+        function renderApp() {
+            renderStats();
+            renderTabs();
+            renderPanes();
+            setupCheckboxListeners();
+        }
+
+        function renderStats() {
+            let statsHtml = '';
+            for (let type in categories) {
+                let cat = categories[type];
+                let checkedCount = Object.keys(appData[type] || {}).length;
+                let percentage = Math.round((checkedCount / targets[type]) * 100);
+                if (percentage > 100) percentage = 100;
+
+                let offset = 251.2 - ((251.2 * percentage) / 100);
+
+                statsHtml += `
+                <div class="stat-card">
+                    <div class="ring-container ring-${type}">
+                        <svg viewBox="0 0 100 100" class="ring-svg">
+                            <circle cx="50" cy="50" r="40" class="ring-bg"></circle>
+                            <circle cx="50" cy="50" r="40" class="ring-fill" stroke="${cat.color}" stroke-dashoffset="${offset}" style="filter: drop-shadow(0 0 8px ${cat.glow})"></circle>
+                        </svg>
+                        <div class="ring-text text-${type}">${percentage}%</div>
+                    </div>
+                    <div class="stat-info">
+                        <h3 style="color: ${cat.color}">
+                            <i class="ph-fill ${cat.icon}"></i>
+                            ${cat.title}
+                        </h3>
+                        <p>${cat.subtitle}</p>
+                        <div class="details">
+                            <span class="completed-${type}">${checkedCount}</span> / ${targets[type]}
+                        </div>
+                    </div>
+                </div>`;
+            }
+            document.getElementById('statsContainer').innerHTML = statsHtml;
+        }
+
+        function renderTabs() {
+            let tabsHtml = '';
+            for (let wNum in weeks) {
+                tabsHtml += `<button class="tab-btn ${wNum == 1 ? 'active' : ''}" onclick="switchWeek(${wNum}, this)">${weeks[wNum]}</button>`;
+            }
+            document.getElementById('weekTabsContainer').innerHTML = tabsHtml;
+        }
+
+        function renderPanes() {
+            let panesHtml = '';
+            for (let wNum in weeks) {
+                panesHtml += `<div id="week-${wNum}" class="week-pane ${wNum == 1 ? 'active' : ''}">`;
+                
+                for (let type in categories) {
+                    let cat = categories[type];
+                    panesHtml += `
+                    <div class="category-section">
+                        <div class="cat-header">
+                            <div class="cat-header-left">
+                                <div class="cat-icon" style="background: ${cat.color}; box-shadow: 0 10px 20px ${cat.glow};">
+                                    <i class="ph-duotone ${cat.icon}"></i>
+                                </div>
+                                <div>
+                                    <h2>${cat.title} - ${weeks[wNum]}</h2>
+                                    <p>${cat.subtitle}</p>
+                                </div>
+                            </div>
+                            <button class="btn-clear" onclick="clearCategoryData('${type}', '${cat.title}')">
+                                <i class="ph-bold ph-trash"></i> مسح إنجاز القسم
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th class="sticky-col">المهام / الأيام</th>`;
+                    for(let dayKey in days) { panesHtml += `<th>${days[dayKey]}</th>`; }
+                    panesHtml += `</tr></thead><tbody>`;
+                    
+                    for (let rowId in cat.rows) {
+                        panesHtml += `<tr><td class="sticky-col">${cat.rows[rowId]}</td>`;
+                        for(let dayKey in days) {
+                            let key = `w${wNum}_${dayKey}_${rowId}`;
+                            let checked = appData[type][key] ? 'checked' : '';
+                            panesHtml += `
+                            <td>
+                                <input type="checkbox" class="fancy-checkbox" 
+                                       data-type="${type}" data-key="${key}" data-week="${wNum}" data-color="${cat.color}"
+                                       style="--checked-color: ${cat.color}; --checked-glow: ${cat.glow}"
+                                       ${checked}>
+                            </td>`;
+                        }
+                        panesHtml += `</tr>`;
+                    }
+                    panesHtml += `</tbody></table></div></div>`;
+                }
+                panesHtml += `</div>`;
+            }
+            document.getElementById('appPanesContainer').innerHTML = panesHtml;
+        }
+
+        function setupCheckboxListeners() {
+            document.querySelectorAll('.fancy-checkbox').forEach(cb => {
+                // Initialize styles
+                if(cb.checked) {
+                    cb.style.background = cb.style.getPropertyValue('--checked-color');
+                    cb.style.boxShadow = '0 0 15px ' + cb.style.getPropertyValue('--checked-glow');
+                }
+
+                cb.addEventListener('change', function() {
+                    const type = this.getAttribute('data-type');
+                    const key = this.getAttribute('data-key');
+                    const week = this.getAttribute('data-week');
+                    const color = this.getAttribute('data-color');
+                    const isChecked = this.checked;
+
+                    // Update visually
+                    if(isChecked) {
+                        this.style.background = this.style.getPropertyValue('--checked-color');
+                        this.style.boxShadow = '0 0 15px ' + this.style.getPropertyValue('--checked-glow');
+                    } else {
+                        this.style.background = 'rgba(0,0,0,0.3)';
+                        this.style.boxShadow = 'none';
+                    }
+
+                    // Save Data
+                    if(isChecked) {
+                        appData[type][key] = true;
+                    } else {
+                        delete appData[type][key];
+                    }
+                    saveData();
+                    updateRingsLocal(type, isChecked);
+
+                    if(isChecked) launchEncouragement(type, week, color);
+                });
+            });
+        }
+
+        function switchWeek(weekNum, btn) {
+            document.querySelectorAll('.week-pane').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('week-' + weekNum).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        function clearCategoryData(type, title) {
+            Swal.fire({
+                title: `تأكيد مسح البيانات؟`,
+                text: `ستقوم ببدء شهر جديد وحذف جميع علامات 'الصح' الخاصة بقسم (${title}) نهائياً لتبدأ من الصفر.`,
+                icon: `warning`,
+                showCancelButton: true,
+                confirmButtonColor: `#ef4444`,
+                cancelButtonColor: `rgba(255,255,255,0.1)`,
+                confirmButtonText: `نعم، امسح وابدأ من جديد`,
+                cancelButtonText: `إلغاء`,
+                background: `#18181b`,
+                color: `#fafafa`
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    appData[type] = {};
+                    saveData();
+                    location.reload();
+                }
+            });
+        }
+
+        function updateRingsLocal(type, isChecked) {
+            const completedEl = document.querySelector(`.completed-${type}`);
+            if(!completedEl) return;
+            
+            let currentStr = parseInt(completedEl.innerText);
+            let newStr = isChecked ? currentStr + 1 : currentStr - 1;
+            completedEl.innerText = newStr;
+            
+            const target = targets[type];
+            let percentage = Math.round((newStr / target) * 100);
+            if(percentage > 100) percentage = 100;
+            
+            const circle = document.querySelector(`.ring-${type} .ring-fill`);
+            const text = document.querySelector(`.text-${type}`);
+            
+            if(circle && text) {
+                const offset = 251.2 - ((251.2 * percentage) / 100);
+                circle.style.strokeDashoffset = offset;
+                text.innerText = percentage + '%';
+                
+                if(percentage === 100 && !circle.dataset.celebrated) {
+                    circle.dataset.celebrated = 'true';
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                    Swal.fire({
+                        title: 'إنجاز أسطوري! 🏆',
+                        text: `لقد أتممت هدف ${type} بنسبة 100%، فخورين بك!`,
+                        icon: 'success',
+                        background: '#18181b', color: '#fafafa', confirmButtonColor: '#3b82f6'
+                    });
+                } else if(percentage < 100) {
+                    circle.dataset.celebrated = '';
+                }
+            }
+        }
+
+        function launchEncouragement(type, week, color) {
+            if(Math.random() > 0.6) return; // 40% chance
+
+            let title = "";
+            let msg = "";
+
+            if (type === 'prayers') {
+                title = "الله يتقبل! 🕌";
+                if (week == 1) msg = "البداية هي الأصعب، لكنك أثبت أنك أقوى! كمل صلاة يا بطل.";
+                else if (week == 2) msg = "أسبوعان من الثبات! لقد كُتبت من المصلين، عاش يا بطل استمر 💪";
+                else if (week == 3) msg = "ثلاثة أسابيع! أصبحت الصلاة نوراً في وجهك، استمر ✨";
+                else msg = "يا للفخر! أتممت الشهر بالتزام جبار.. حافظ على نور وجهك يا بطل 🌟";
+            } 
+            else if (type === 'quran') {
+                title = "زادك الله نوراً 📖";
+                const qMsgs = [
+                    "كل حرف تقرأه بحسنة، والحسنة بعشر أمثالها.. استمر يا بطل ✨",
+                    "الأحزاب والآيات اللي بتقرأها دلوقتي هي اللي هتنور لك قبرك، عاش جداً! 🤍",
+                    "تلاوتك النهاردة رفعت رصيدك في الجنة درجات، استمر يا عظيم 🕋",
+                    "القرآن صاحبك الحقيقي في الدنيا والآخرة.. تم الإنجاز بنجاح! 🌟"
+                ];
+                msg = qMsgs[Math.floor(Math.random() * qMsgs.length)];
+            } 
+            else if (type === 'study') {
+                title = "وحش المذاكرة 🎯";
+                const sMsgs = [
+                    "تعب المذاكرة هيروح وهتفضل النتيجة والنجاح والفخر.. كمل يا بطل 🚀",
+                    "المذاكرة دلوقتي هي الاستثمار الوحيد اللي مبيخسرش أبدًا.. استمر! 📚",
+                    "كل ساعة بتبذلها دلوقتي بتوفر عليك سنين إرهاق بكرة.. عاش! 💡",
+                    "الإنجاز الحقيقي بيتبني في الصمت وبعيد عن العيون، فخورين بك جداً! 🔥",
+                    "المستقبل المشرق مبيستناش غير الكيانات العظيمة اللي زيك.. دُس! 📈"
+                ];
+                msg = sMsgs[Math.floor(Math.random() * sMsgs.length)];
+            }
+
+            Swal.fire({
+                toast: true, position: 'top-end', title: title, text: msg, icon: 'success',
+                showConfirmButton: false, timer: 4500, timerProgressBar: true,
+                background: '#18181b', color: '#fafafa', iconColor: color
+            });
+        }
+
+        // Export/Import Features
+        function toggleSettings() {
+            document.getElementById('settingsDropdown').classList.toggle('show');
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const container = document.querySelector('.settings-btn-container');
+            if (container && !container.contains(event.target)) {
+                document.getElementById('settingsDropdown').classList.remove('show');
+            }
+        });
+
+        function exportData() {
+            const dataStr = JSON.stringify(appData);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            const exportFileDefaultName = `ather_data_${currentUser || 'guest'}.json`;
+
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            document.getElementById('settingsDropdown').classList.remove('show');
+            
+            Swal.fire({toast:true, title:'تم تصدير البيانات بنجاح', icon:'success', position:'top-end', timer:3000, showConfirmButton:false, background: '#18181b', color: '#fafafa'});
+        }
+
+        function importData() {
+            document.getElementById('importFile').click();
+            document.getElementById('settingsDropdown').classList.remove('show');
+        }
+
+        function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if(importedData.prayers && importedData.quran && importedData.study) {
+                        appData = importedData;
+                        saveData();
+                        Swal.fire({
+                            title: 'تم استيراد البيانات!',
+                            text: 'تم تحديث لوحة الإنجاز بنجاح بناءً على الملف المرفوع.',
+                            icon: 'success',
+                            background: '#18181b', color: '#fafafa', confirmButtonColor: '#10b981'
+                        }).then(() => location.reload());
+                    } else {
+                        throw new Error('Invalid Format');
+                    }
+                } catch(error) {
+                    Swal.fire({title: 'خطأ في الاستيراد', text: 'يبدو أن الملف الذي اخترته غير صالح.', icon: 'error', background: '#18181b', color: '#fafafa'});
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Notifications System
+        let prayerTimes = {};
+        let notifiedPrayers = {};
+
+        window.addEventListener('load', () => {
+             if (Notification.permission === "granted") {
+                 fetchPrayerTimes();
+                 setInterval(checkPrayerTimes, 30000);
+             } else {
+                 document.getElementById('enableNotifBtn').style.display = 'inline-flex';
+             }
+             // Render UI
+             renderApp();
+        });
+
+        async function fetchPrayerTimes() {
+            try {
+                const res = await fetch('https://api.aladhan.com/v1/timingsByCity?city=Cairo&country=Egypt&method=5');
+                const data = await res.json();
+                const timings = data.data.timings;
+                prayerTimes = {
+                    'الفجر': timings.Fajr, 'الظهر': timings.Dhuhr, 'العصر': timings.Asr,
+                    'المغرب': timings.Maghrib, 'العشاء': timings.Isha
+                };
+            } catch(err) { console.error("Failed to load prayer times", err); }
+        }
+
+        function checkPrayerTimes() {
+            if (Notification.permission !== "granted" || Object.keys(prayerTimes).length === 0) return;
+            const now = new Date();
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+
+            for (let [prayerName, time] of Object.entries(prayerTimes)) {
+                if (time === currentTime && !notifiedPrayers[prayerName]) {
+                    new Notification(`🕋 حان الآن موعد صلاة ${prayerName}`, {
+                        body: `قم للصلاة ولا تنسَ تسجيل إنجازك في أثر القناص!`,
+                        icon: "https://cdn-icons-png.flaticon.com/512/1036/1036081.png",
+                    });
+                    notifiedPrayers[prayerName] = true;
+                    Swal.fire({
+                        title: `الصلاة خيراً من النوم!`, text: `حان الآن موعد صلاة ${prayerName}، يلا بينا يا بطل.`,
+                        icon: 'info', background: '#18181b', color: '#fafafa', confirmButtonColor: '#10b981'
+                    });
+                }
+            }
+            if (now.getHours() === 0 && now.getMinutes() === 0) { notifiedPrayers = {}; fetchPrayerTimes(); }
+        }
+
+        function startNotificationSystem() {
+            if (!("Notification" in window)) { Swal.fire({toast: true, title: 'متصفحك لا يدعم الإشعارات', icon: 'error'}); return; }
+            Notification.requestPermission().then(function(permission) {
+                if (permission === "granted") {
+                    Swal.fire({
+                        title: 'تم التفعيل بامتياز! 🔔', text: 'سيرسل التطبيق إشعارات لمواقيت الصلاة.', 
+                        icon: 'success', background: '#18181b', color: '#fafafa', confirmButtonColor: '#3b82f6'
+                    });
+                    document.getElementById('enableNotifBtn').style.display = 'none';
+                    fetchPrayerTimes(); setInterval(checkPrayerTimes, 30000);
+                } else { Swal.fire({title: 'لم يتم تفعل الإشعارات', icon: 'error', background: '#18181b', color: '#fff'}); }
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.reload();
+        }
+
+        function login() {
+            window.location.href = 'login.html';
+        }
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then(reg => {
+                console.log('SW Registered');
+            }).catch(err => console.log('SW Error: ', err));
+        }
+    </script>
+</body>
+</html>

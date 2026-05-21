@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- PWA Meta tags -->
+    <meta name="theme-color" content="#050505">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
+    <title>تسجيل الدخول - تطبيق أَثَر</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root {
+            --bg-color: #050505;
+            --surface-bg: rgba(20, 20, 25, 0.65);
+            --border: rgba(255, 255, 255, 0.08);
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.4);
+            --font-ar: 'Cairo', sans-serif;
+        }
+
+        * {
+            margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-ar);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .ambient-mesh {
+            position: absolute; inset: 0; z-index: -1;
+            background: 
+                radial-gradient(at 10% 10%, rgba(13, 25, 60, 0.8) 0px, transparent 50%),
+                radial-gradient(at 90% 90%, rgba(20, 15, 45, 0.8) 0px, transparent 50%);
+            animation: meshAnim 20s infinite alternate;
+        }
+        @keyframes meshAnim { 100% { filter: hue-rotate(20deg) scale(1.1); } }
+
+        .auth-container {
+            width: 100%; max-width: 420px;
+            padding: 2.5rem;
+            background: var(--surface-bg);
+            backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            margin: 1.5rem;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        .auth-header { text-align: center; margin-bottom: 2.5rem; }
+        .icon-box {
+            width: 80px; height: 80px; margin: 0 auto 1.5rem;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            border-radius: 22px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3rem; color: #fff;
+            box-shadow: 0 10px 25px var(--primary-glow);
+        }
+        
+        .auth-header h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 0.5rem; }
+        .auth-header p { color: #94a3b8; font-size: 0.95rem; }
+
+        .form-group { margin-bottom: 1.2rem; }
+        .form-label { display: block; margin-bottom: 0.5rem; color: #cbd5e1; font-weight: 600; font-size: 0.95rem; }
+        
+        .form-control {
+            width: 100%; background: rgba(0,0,0,0.3); border: 2px solid rgba(255,255,255,0.05);
+            padding: 1rem 1.2rem; border-radius: 14px;
+            color: #fff; font-size: 1rem; transition: all 0.3s;
+            outline: none;
+        }
+        .form-control:focus { border-color: var(--primary); background: rgba(0,0,0,0.5); box-shadow: 0 0 15px rgba(59, 130, 246, 0.2); }
+
+        .btn {
+            width: 100%; padding: 1.1rem; border: none; border-radius: 14px;
+            font-size: 1.1rem; font-weight: 800; cursor: pointer;
+            transition: all 0.3s; margin-bottom: 1rem;
+            display: flex; justify-content: center; align-items: center; gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary); color: #fff;
+            box-shadow: 0 5px 15px var(--primary-glow);
+        }
+        .btn-primary:hover { background: #2563eb; transform: translateY(-2px); box-shadow: 0 8px 20px var(--primary-glow); }
+
+        .btn-outline {
+            background: transparent; color: #fff;
+            border: 2px solid rgba(255,255,255,0.1);
+        }
+        .btn-outline:hover { background: rgba(255,255,255,0.05); }
+
+        .error-msg {
+            background: rgba(239, 68, 68, 0.1); color: #ef4444;
+            padding: 1rem; border-radius: 12px; margin-bottom: 1.5rem;
+            font-size: 0.9rem; font-weight: 700; text-align: center;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            display: none;
+        }
+        .error-msg.show { display: block; }
+
+        .toggle-text {
+            text-align: center; color: #94a3b8; font-size: 0.9rem; font-weight: 600;
+            margin-top: 1rem; cursor: pointer; transition: color 0.3s;
+        }
+        .toggle-text span { color: var(--primary); font-weight: 800; }
+        .toggle-text:hover span { color: #fff; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-mesh"></div>
+
+    <div class="auth-container">
+        <div class="auth-header">
+            <div class="icon-box">
+                <i class="ph-duotone ph-fingerprint"></i>
+            </div>
+            <h1>تطبيق أَثــر</h1>
+            <p>مساحتك الخاصة، أدخل للنظام</p>
+        </div>
+
+        <div id="error-alert" class="error-msg">
+            <i class="ph-fill ph-warning-circle"></i> <span id="error-text"></span>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <form id="loginForm" onsubmit="handleAuth(event, 'login')">
+            <div class="form-group">
+                <label class="form-label">الاسم أو اللقب</label>
+                <input type="text" id="l_username" class="form-control" placeholder="مثال: Ahmed_Ali" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">الرقم السري</label>
+                <input type="password" id="l_password" class="form-control" placeholder="••••••••" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="ph-bold ph-sign-in"></i> دخول للوحة الإنجاز
+            </button>
+            <div class="toggle-text" onclick="toggleForm()">
+                أول مرة تستخدم التطبيق؟ <span>إنشاء حساب جديد</span>
+            </div>
+        </form>
+
+        <!-- REGISTER FORM -->
+        <form id="registerForm" class="hidden" onsubmit="handleAuth(event, 'register')">
+            <div class="form-group">
+                <label class="form-label">اختر اسم مستخدم خاص بك</label>
+                <input type="text" id="r_username" class="form-control" placeholder="اكتب اسمك بدون مسافات" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">انشئ رقم سري</label>
+                <input type="password" id="r_password" class="form-control" placeholder="••••••••" required>
+            </div>
+            
+            <button type="submit" class="btn btn-outline" style="border-color: var(--primary); color: var(--primary);">
+                <i class="ph-bold ph-user-plus"></i> إنشاء الحساب والبدء
+            </button>
+            <div class="toggle-text" onclick="toggleForm()">
+                لديك حساب بالفعل؟ <span>تسجيل الدخول</span>
+            </div>
+        </form>
+
+    </div>
+
+    <script>
+        // Check if already logged in
+        if (localStorage.getItem('currentUser')) {
+            window.location.href = 'index.html';
+        }
+
+        function toggleForm() {
+            document.getElementById('loginForm').classList.toggle('hidden');
+            document.getElementById('registerForm').classList.toggle('hidden');
+            hideError();
+            
+            // Update Text
+            const headerP = document.querySelector('.auth-header p');
+            if(document.getElementById('loginForm').classList.contains('hidden')) {
+                headerP.innerText = "أنشئ حسابك وابدأ رحلة الإنجاز";
+            } else {
+                headerP.innerText = "مساحتك الخاصة، أدخل للنظام";
+            }
+        }
+
+        function showError(msg) {
+            const errorAlert = document.getElementById('error-alert');
+            document.getElementById('error-text').innerText = msg;
+            errorAlert.classList.add('show');
+        }
+
+        function hideError() {
+            document.getElementById('error-alert').classList.remove('show');
+        }
+
+        async function hashPassword(password) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hash = await crypto.subtle.digest('SHA-256', data);
+            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function handleAuth(e, action) {
+            e.preventDefault();
+            hideError();
+
+            const prefix = action === 'login' ? 'l_' : 'r_';
+            const usernameInput = document.getElementById(prefix + 'username').value.trim();
+            const passwordInput = document.getElementById(prefix + 'password').value;
+
+            // Sanitize username
+            const username = usernameInput.replace(/[^a-zA-Z0-9_\u0600-\u06FF]/g, '');
+
+            if (!username || !passwordInput) {
+                showError("عذراً، يرجى إدخال اسم المستخدم وكلمة المرور!");
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem('users_db')) || {};
+
+            if (action === 'register') {
+                if (users[username]) {
+                    showError("هذا الحساب موجود بالفعل! قم بتسجيل الدخول.");
+                } else if (passwordInput.length < 4) {
+                    showError("كلمة المرور يجب أن تكون 4 أحرف أو أرقام على الأقل.");
+                } else {
+                    users[username] = await hashPassword(passwordInput);
+                    localStorage.setItem('users_db', JSON.stringify(users));
+                    localStorage.setItem('currentUser', username);
+                    window.location.href = 'index.html';
+                }
+            } else if (action === 'login') {
+                const hashedPassword = await hashPassword(passwordInput);
+                if (users[username] && users[username] === hashedPassword) {
+                    localStorage.setItem('currentUser', username);
+                    window.location.href = 'index.html';
+                } else {
+                    showError("بيانات الدخول غير صحيحة، تأكد من الاسم وكلمة المرور.");
+                }
+            }
+        }
+    </script>
+</body>
+</html>

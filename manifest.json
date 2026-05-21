@@ -1,0 +1,18 @@
+{
+  "name": "أَثَــر القَنَّــاص",
+  "short_name": "أثر القناص",
+  "description": "مساحتك الاحترافية لتتبع الإنجاز الشخصي والمحافظة على الصلوات.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1036/1036081.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
